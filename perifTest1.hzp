@@ -21,6 +21,7 @@
       c_only_additional_options="-fms-extensions"
       c_preprocessor_definitions="USE_PROCESS_STACK;__TARGET_PROCESSOR=LPC1769;OSCILLATOR_CLOCK_FREQUENCY=12000000;CORE_M3"
       c_user_include_directories="/home/drob/LPCOpen_17xx/lpc_chip_175x_6x/inc;/home/drob/LPCOpen_17xx/lpc_board_nxp_lpcxpresso_1769/inc;$(ProjectDir)/LPC1000/include/CMSIS;$(ProjectDir)/CMSIS_3/CMSIS/Include;$(ProjectDir)/LPC1000/include"
+      compile_pre_build_command="$(ProjectDir)/dateset.sh ."
       link_include_startup_code="No"
       linker_additional_files="$(TargetsDir)/LPC1000/lib/liblpc1000$(LibExt)$(LIB)"
       linker_memory_map_file="$(ProjectDir)/LPC1769_MemoryMap.xml"

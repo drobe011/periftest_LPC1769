@@ -99,6 +99,10 @@ int main(void)
 		Chip_RTC_Enable(LPC_RTC, 1);
 	}
 
+	//Add PWM Inits
+	
+	
+	
 	uint32_t tickertime = ticker;
 	uint8_t rcvchar = EOF;
 	//Chip_UART_SendBlocking(LPC_UART3, "\nReady\n", 7);
