@@ -17,8 +17,7 @@ int main(void)
 	Board_I2C_Init(I2C1);
 	SysTick_Config(SystemCoreClock / 1000);
 
-	RTC_TIME_T actTime;
-	RTC_TIME_T *FullTime = &actTime;
+	RTC_TIME_T FullTime;
 	uint32_t tickertime = ticker;
 	uint8_t rcvchar = EOF;
 	uint32_t duty = 0;
@@ -26,7 +25,7 @@ int main(void)
 
 	setupTimer();
 	setupCounter();
-	setupRTC(FullTime);
+	setupRTC(&FullTime);
 	setupEEPROM();
 	setupPWM(KHZ(1), duty);
 	setupRITimer();
@@ -43,8 +42,8 @@ int main(void)
 				switch (rcvchar)
 				{
 					case 't':
-						Chip_RTC_GetFullTime(LPC_RTC, FullTime);
-						showTime(FullTime);
+						Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
+						showTime(&FullTime);
 						break;
 					case 'c':
 						printf("\n\rCaps: %d\n\r", cap);
@@ -87,11 +86,11 @@ void setupTimer(void)
 	Chip_TIMER_PrescaleSet(LPC_TIMER0, 500);
 	Chip_TIMER_SetMatch(LPC_TIMER0, 0, 16000);
 	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 0);
-	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
+//	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
 	Chip_TIMER_ExtMatchControlSet(LPC_TIMER0, RESET, TIMER_EXTMATCH_TOGGLE, 0);
 	Chip_TIMER_Enable(LPC_TIMER0);
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-	NVIC_EnableIRQ(TIMER0_IRQn);
+//	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+//	NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
 void setupCounter(void)
@@ -180,13 +179,13 @@ void RIT_IRQHandler(void)
 	Chip_RIT_ClearInt(LPC_RITIMER);
 }
 
-void TIMER0_IRQHandler(void)
-{
-	if (Chip_TIMER_MatchPending(LPC_TIMER0, 0))
-	{
-		Chip_TIMER_ClearMatch(LPC_TIMER0, 0);
-	}
-}
+//void TIMER0_IRQHandler(void)
+//{
+//	if (Chip_TIMER_MatchPending(LPC_TIMER0, 0))
+//	{
+//		Chip_TIMER_ClearMatch(LPC_TIMER0, 0);
+//	}
+//}
 
 void TIMER1_IRQHandler(void)
 {
