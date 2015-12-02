@@ -21,12 +21,14 @@
 
 volatile int ticker = 0;
 volatile int cap = 0;
+volatile int updatePWMTimer = 0;
 
 void setupTimer(void);
 void setupCounter(void);
 void setupPWM(uint32_t period, uint32_t onTime);
 void setupRTC(RTC_TIME_T *thisTime);
 void setupEEPROM(void);
+void setupRITimer(void);
 void showTime(RTC_TIME_T *pTime);
 void getProm();
 
