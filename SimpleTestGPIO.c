@@ -22,7 +22,8 @@
 #define FIO0SET_ADDRESS LPC_GPIO0_BASE + FIOSET_OFFSET // 0x2009C018 //C01A  // FIO0SET2
 #define FIO0GET_ADDRESS LPC_GPIO0_BASE + FIOPIN_OFFSET
 #define FIO0CLR_ADDRESS LPC_GPIO0_BASE + FIOCLR_OFFSET
-#define LED_PIN 22					   //6 //pin22
+#define LED_PIN 22 //6 //pin22
+#define KHZ(x) x * 100
 
 volatile int ticker = 0;
 volatile int cap = 0;
@@ -99,12 +100,25 @@ int main(void)
 		Chip_RTC_Enable(LPC_RTC, 1);
 	}
 
+	//Add PWM Inits
+	Chip_IOCON_PinMux(LPC_IOCON, 1, 20, 2, 2); //pwm1.2
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 20);
+	Chip_PWM_Init(LPC_PWM1);
+	Chip_PWM_Reset(LPC_PWM1);
+	Chip_PWM_PrescaleSet(LPC_PWM1, 300);
+	Chip_PWM_ResetOnMatchEnable(LPC_PWM1, 0);
+	Chip_PWM_SetMatch(LPC_PWM1, 0, KHZ(1));
+	Chip_PWM_SetMatch(LPC_PWM1, 2, );
+	Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
+	Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
+	Chip_PWM_SetControlMode(LPC_PWM1, 2, PWM_SINGLE_EDGE_CONTROL_MODE, PWM_OUT_ENABLED);
+	Chip_PWM_Enable(LPC_PWM1);
+	
 	uint32_t tickertime = ticker;
 	uint8_t rcvchar = EOF;
-	//Chip_UART_SendBlocking(LPC_UART3, "\nReady\n", 7);
+	uint32_t duty = LPC_PWM1->MR2;
+
 	printf("\n\n\rReady..\n\r");
-	printf("Sizof: %d\n\r", INT32_MAX);
-	// Enter an infinite loop
 
 	while (1)
 	{
@@ -124,6 +138,27 @@ int main(void)
 						break;
 					case 'e':
 						getProm();
+						break;
+					case '+':
+						if (duty < 100)
+					{
+						duty++;
+						Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
+						Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
+						Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
+						printf("%d\n\r",duty);
+					}
+						break;
+					case '-':
+						if (duty > 0)
+					{
+						duty--;
+						Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
+						Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
+						Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
+						printf("%d\n\r",duty);
+					}
+						
 				}
 			}
 			tickertime = ticker;
