@@ -13,3 +13,6 @@
 - GPIO
 - Repetitive Interupt Timer
 
+## Aditional Items
+- Bit Banding
+- Redirect printf to UART
