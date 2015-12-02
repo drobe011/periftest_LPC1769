@@ -17,16 +17,19 @@ int main(void)
 	Board_I2C_Init(I2C1);
 	SysTick_Config(SystemCoreClock / 1000);
 
-	RTC_TIME_T FullTime;
+	RTC_TIME_T actTime;
+	RTC_TIME_T *FullTime = &actTime;
 	uint32_t tickertime = ticker;
 	uint8_t rcvchar = EOF;
 	uint32_t duty = 0;
+	uint32_t flashDir = 1;
 
 	setupTimer();
 	setupCounter();
-	setupRTC(&FullTime);
+	setupRTC(FullTime);
 	setupEEPROM();
 	setupPWM(KHZ(1), duty);
+	setupRITimer();
 
 	printf("\n\n\rReady..\n\r");
 
@@ -40,41 +43,38 @@ int main(void)
 				switch (rcvchar)
 				{
 					case 't':
-						Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
-						showTime(&FullTime);
+						Chip_RTC_GetFullTime(LPC_RTC, FullTime);
+						showTime(FullTime);
 						break;
 					case 'c':
 						printf("\n\rCaps: %d\n\r", cap);
 						break;
 					case 'e':
 						getProm();
-						break;
-					case '=':
-						if (duty < 100)
-					{
-						duty++;
-						Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
-						Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
-						Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
-						printf("%d\n\r",duty);
-					}
-						break;
-					case '-':
-						if (duty > 0)
-					{
-						duty--;
-						Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
-						Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
-						Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
-						printf("%d\n\r",duty);
-					}
-						
+						break;						
 				}
 			}
 			tickertime = ticker;
+		}	
+		if (updatePWMTimer)
+		{
+			switch (flashDir)
+			{
+				case 0:
+				if (duty > 0) duty--;
+				if (duty == 0) flashDir = 1;
+				break;
+				case 1:
+				if (duty < 100) duty++;
+				if (duty == 100) flashDir = 0;
+			}
+			Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
+			Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
+			Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
+			updatePWMTimer = 0;			
 		}
 	}
-	return 0;
+	//return 0;
 }
 
 void setupTimer(void)
@@ -159,9 +159,25 @@ void setupEEPROM(void)
 
 	//Chip_I2C_MasterSend(I2C1, xfer.slaveAddr, "dave", 4);
 }
+
+void setupRITimer(void)
+{
+	Chip_RIT_Init(LPC_RITIMER);
+	Chip_RIT_SetTimerInterval(LPC_RITIMER, 10);
+	Chip_RIT_Enable(LPC_RITIMER);
+	NVIC_ClearPendingIRQ(RITIMER_IRQn);
+	NVIC_EnableIRQ(RITIMER_IRQn);
+}
+
 void SysTick_Handler(void)
 {
 	ticker++;
+}
+
+void RIT_IRQHandler(void)
+{
+	updatePWMTimer = 1;
+	Chip_RIT_ClearInt(LPC_RITIMER);
 }
 
 void TIMER0_IRQHandler(void)
@@ -187,11 +203,15 @@ void TIMER1_IRQHandler(void)
 
 void showTime(RTC_TIME_T *pTime)
 {
+	NVIC_ClearPendingIRQ(RITIMER_IRQn);
+	NVIC_DisableIRQ(RITIMER_IRQn);
 	printf("Time: %.2d:%.2d:%.2d %.2d/%.2d/%.4d\r\n",
 		   pTime->time[RTC_TIMETYPE_HOUR], pTime->time[RTC_TIMETYPE_MINUTE],
 		   pTime->time[RTC_TIMETYPE_SECOND], pTime->time[RTC_TIMETYPE_MONTH],
 		   pTime->time[RTC_TIMETYPE_DAYOFMONTH],
 		   pTime->time[RTC_TIMETYPE_YEAR]);
+	NVIC_ClearPendingIRQ(RITIMER_IRQn);
+	NVIC_EnableIRQ(RITIMER_IRQn);
 }
 
 void getProm(void)
