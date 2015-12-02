@@ -48,6 +48,7 @@
       <file file_name="bitband.h" />
       <file file_name="mDT.h" />
       <file file_name="sysinit.c" />
+      <file file_name="SimpleTestGPIO.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="thumb_crt0.s" />

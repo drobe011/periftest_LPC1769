@@ -8,115 +8,25 @@
  ===============================================================================
  */
 
-#include "board.h"
-//#include <cross_studio_io.h>
-#include "mDT.h"
-#include <stdlib.h>
-#include <string.h>
-#include "bitband.h"
-
-#define FORCE_RTC_SET 0
-#define FIOSET_OFFSET 0x18
-#define FIOPIN_OFFSET 0x14
-#define FIOCLR_OFFSET 0x1C
-#define FIO0SET_ADDRESS LPC_GPIO0_BASE + FIOSET_OFFSET // 0x2009C018 //C01A  // FIO0SET2
-#define FIO0GET_ADDRESS LPC_GPIO0_BASE + FIOPIN_OFFSET
-#define FIO0CLR_ADDRESS LPC_GPIO0_BASE + FIOCLR_OFFSET
-#define LED_PIN 22 //6 //pin22
-#define KHZ(x) x * 100
-
-volatile int ticker = 0;
-volatile int cap = 0;
-
-void showTime(RTC_TIME_T *pTime);
-void getProm();
-
-static I2C_XFER_T xfer;
-uint8_t rxbuffer[10];
-uint8_t txbuffer[10];
+#include "SimpleTestGPIO.h"
 
 int main(void)
 {
-
 	SystemCoreClockUpdate();
 	Board_Init();
 	Board_I2C_Init(I2C1);
-
-	Chip_IOCON_PinMux(LPC_IOCON, 1, 28, 2, 3);
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 28);
-
-	Chip_IOCON_PinMux(LPC_IOCON, 1, 18, 2, 3);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 1, 18);
-
 	SysTick_Config(SystemCoreClock / 1000);
 
-	Chip_TIMER_Init(LPC_TIMER0);
-	Chip_TIMER_Reset(LPC_TIMER0);
-	Chip_TIMER_PrescaleSet(LPC_TIMER0, 500);
-	Chip_TIMER_SetMatch(LPC_TIMER0, 0, 16000);
-	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 0);
-	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
-	LPC_TIMER0->EMR |= (1 << 4);
-	LPC_TIMER0->EMR |= (1 << 5);
-	Chip_TIMER_Enable(LPC_TIMER0);
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-	NVIC_EnableIRQ(TIMER0_IRQn);
-
-	Chip_TIMER_Init(LPC_TIMER1);
-	Chip_TIMER_Reset(LPC_TIMER1);
-	Chip_TIMER_CaptureRisingEdgeEnable(LPC_TIMER1, 0);
-	Chip_TIMER_CaptureEnableInt(LPC_TIMER1, 0);
-	Chip_TIMER_Enable(LPC_TIMER1);
-	NVIC_ClearPendingIRQ(TIMER1_IRQn);
-	NVIC_EnableIRQ(TIMER1_IRQn);
-
-	xfer.rxBuff = rxbuffer;
-	xfer.rxSz = 4;
-	xfer.txBuff = txbuffer;
-	xfer.txSz = 6;
-	xfer.slaveAddr = 0b1010000;
-	xfer.slaveAddr &= 0xFF;
-
-	Chip_I2C_Init(I2C1);
-	Chip_I2C_SetClockRate(I2C1, 100000);
-	Chip_I2C_SetMasterEventHandler(I2C1, Chip_I2C_EventHandlerPolling);
-
-	//Chip_I2C_MasterSend(I2C1, xfer.slaveAddr, "dave", 4);
-
 	RTC_TIME_T FullTime;
-	if ((LPC_RTC->RTC_AUX & (1 << 4)) || (FORCE_RTC_SET == 1))
-	{
-		FullTime.time[RTC_TIMETYPE_SECOND] = (uint32_t)mS;
-		FullTime.time[RTC_TIMETYPE_MINUTE] = (uint32_t)mMN;
-		FullTime.time[RTC_TIMETYPE_HOUR] = (uint32_t)mHR;
-		FullTime.time[RTC_TIMETYPE_DAYOFMONTH] = (uint32_t)mDY;
-		FullTime.time[RTC_TIMETYPE_DAYOFWEEK] = (uint32_t)mWD;
-		FullTime.time[RTC_TIMETYPE_DAYOFYEAR] = (uint32_t)mDOY;
-		FullTime.time[RTC_TIMETYPE_MONTH] = (uint32_t)mMO;
-		FullTime.time[RTC_TIMETYPE_YEAR] = (uint32_t)mYR;
-
-		Chip_RTC_SetFullTime(LPC_RTC, &FullTime);
-		LPC_RTC->RTC_AUX |= (1 << 4);
-		Chip_RTC_Enable(LPC_RTC, 1);
-	}
-
-	//Add PWM Inits
-	Chip_IOCON_PinMux(LPC_IOCON, 1, 20, 2, 2); //pwm1.2
-	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 20);
-	Chip_PWM_Init(LPC_PWM1);
-	Chip_PWM_Reset(LPC_PWM1);
-	Chip_PWM_PrescaleSet(LPC_PWM1, 300);
-	Chip_PWM_ResetOnMatchEnable(LPC_PWM1, 0);
-	Chip_PWM_SetMatch(LPC_PWM1, 0, KHZ(1));
-	Chip_PWM_SetMatch(LPC_PWM1, 2, );
-	Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
-	Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
-	Chip_PWM_SetControlMode(LPC_PWM1, 2, PWM_SINGLE_EDGE_CONTROL_MODE, PWM_OUT_ENABLED);
-	Chip_PWM_Enable(LPC_PWM1);
-	
 	uint32_t tickertime = ticker;
 	uint8_t rcvchar = EOF;
-	uint32_t duty = LPC_PWM1->MR2;
+	uint32_t duty = 0;
+
+	setupTimer();
+	setupCounter();
+	setupRTC(&FullTime);
+	setupEEPROM();
+	setupPWM(KHZ(1), duty);
 
 	printf("\n\n\rReady..\n\r");
 
@@ -139,7 +49,7 @@ int main(void)
 					case 'e':
 						getProm();
 						break;
-					case '+':
+					case '=':
 						if (duty < 100)
 					{
 						duty++;
@@ -167,6 +77,88 @@ int main(void)
 	return 0;
 }
 
+void setupTimer(void)
+{
+	Chip_IOCON_PinMux(LPC_IOCON, 1, 28, 2, 3);
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 28);
+	
+	Chip_TIMER_Init(LPC_TIMER0);
+	Chip_TIMER_Reset(LPC_TIMER0);
+	Chip_TIMER_PrescaleSet(LPC_TIMER0, 500);
+	Chip_TIMER_SetMatch(LPC_TIMER0, 0, 16000);
+	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 0);
+	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
+	Chip_TIMER_ExtMatchControlSet(LPC_TIMER0, RESET, TIMER_EXTMATCH_TOGGLE, 0);
+	Chip_TIMER_Enable(LPC_TIMER0);
+	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	NVIC_EnableIRQ(TIMER0_IRQn);
+}
+
+void setupCounter(void)
+{
+	Chip_IOCON_PinMux(LPC_IOCON, 1, 18, 2, 3);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 1, 18);
+	
+	Chip_TIMER_Init(LPC_TIMER1);
+	Chip_TIMER_Reset(LPC_TIMER1);
+	Chip_TIMER_CaptureRisingEdgeEnable(LPC_TIMER1, 0);
+	Chip_TIMER_CaptureEnableInt(LPC_TIMER1, 0);
+	Chip_TIMER_Enable(LPC_TIMER1);
+	NVIC_ClearPendingIRQ(TIMER1_IRQn);
+	NVIC_EnableIRQ(TIMER1_IRQn);
+}
+
+void setupPWM(uint32_t period, uint32_t onTime)
+{
+	Chip_IOCON_PinMux(LPC_IOCON, 1, 20, 2, 2); //pwm1.2
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 20);
+	
+	Chip_PWM_Init(LPC_PWM1);
+	Chip_PWM_Reset(LPC_PWM1);
+	Chip_PWM_PrescaleSet(LPC_PWM1, 300);
+	Chip_PWM_ResetOnMatchEnable(LPC_PWM1, 0);
+	Chip_PWM_SetMatch(LPC_PWM1, 0, period);
+	Chip_PWM_SetMatch(LPC_PWM1, 2, onTime);
+	Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
+	Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
+	Chip_PWM_SetControlMode(LPC_PWM1, 2, PWM_SINGLE_EDGE_CONTROL_MODE, PWM_OUT_ENABLED);
+	Chip_PWM_Enable(LPC_PWM1);
+}
+
+void setupRTC(RTC_TIME_T *thisTime)
+{
+	if ((LPC_RTC->RTC_AUX & _BIT(RTC_OSCF)) || (FORCE_RTC_SET == 1))
+	{
+		thisTime->time[RTC_TIMETYPE_SECOND] = (uint32_t)mS;
+		thisTime->time[RTC_TIMETYPE_MINUTE] = (uint32_t)mMN;
+		thisTime->time[RTC_TIMETYPE_HOUR] = (uint32_t)mHR;
+		thisTime->time[RTC_TIMETYPE_DAYOFMONTH] = (uint32_t)mDY;
+		thisTime->time[RTC_TIMETYPE_DAYOFWEEK] = (uint32_t)mWD;
+		thisTime->time[RTC_TIMETYPE_DAYOFYEAR] = (uint32_t)mDOY;
+		thisTime->time[RTC_TIMETYPE_MONTH] = (uint32_t)mMO;
+		thisTime->time[RTC_TIMETYPE_YEAR] = (uint32_t)mYR;
+
+		Chip_RTC_SetFullTime(LPC_RTC, thisTime);
+		LPC_RTC->RTC_AUX |= _BIT(RTC_OSCF);
+		Chip_RTC_Enable(LPC_RTC, 1);
+	}
+}
+
+void setupEEPROM(void)
+{
+	xfer.rxBuff = rxbuffer;
+	xfer.rxSz = 4;
+	xfer.txBuff = txbuffer;
+	xfer.txSz = 6;
+	xfer.slaveAddr = 0b1010000;
+	xfer.slaveAddr &= 0xFF;
+
+	Chip_I2C_Init(I2C1);
+	Chip_I2C_SetClockRate(I2C1, 100000);
+	Chip_I2C_SetMasterEventHandler(I2C1, Chip_I2C_EventHandlerPolling);
+
+	//Chip_I2C_MasterSend(I2C1, xfer.slaveAddr, "dave", 4);
+}
 void SysTick_Handler(void)
 {
 	ticker++;
@@ -182,11 +174,11 @@ void TIMER0_IRQHandler(void)
 
 void TIMER1_IRQHandler(void)
 {
-	uint32_t bitVal = 0;
+	//uint32_t bitVal = 0;
 	if (Chip_TIMER_CapturePending(LPC_TIMER1, 0))
 	{
 		Chip_TIMER_ClearCapture(LPC_TIMER1, 0);
-		LPC_TIMER0->EMR &= ~(1 << 0);
+		///////LPC_TIMER0->EMR &= ~(1 << 0);
 		//Board_LED_Toggle(0);
 		BITBAND_SRAM_GetBit(FIO0GET_ADDRESS, LED_PIN) ? BITBAND_SRAM_SetBit(FIO0CLR_ADDRESS, LED_PIN) : BITBAND_SRAM_SetBit(FIO0SET_ADDRESS, LED_PIN);
 		cap++;
