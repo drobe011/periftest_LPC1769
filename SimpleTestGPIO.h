@@ -2,7 +2,6 @@
 #define SIMPLETESTGPIO_H
 
 #include "board.h"
-//#include <cross_studio_io.h>
 #include "mDT.h"
 #include <stdlib.h>
 #include <string.h>
@@ -22,20 +21,16 @@
 volatile int ticker = 0;
 volatile int cap = 0;
 volatile int updatePWMTimer = 0;
+volatile int duty = 1;
+volatile int flashDir = 1;
 
 void setupTimer(void);
 void setupCounter(void);
 void setupPWM(uint32_t period, uint32_t onTime);
 void setupRTC(RTC_TIME_T *thisTime);
-void setupEEPROM(void);
+void setupEEPROM(I2C_XFER_T *xfr);
 void setupRITimer(void);
 void showTime(RTC_TIME_T *pTime);
-void getProm();
-
-static I2C_XFER_T xfer;
-uint8_t rxbuffer[10];
-uint8_t txbuffer[10];
-
-
+void getProm(I2C_XFER_T *xfr);
 
 #endif

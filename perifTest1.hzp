@@ -14,12 +14,12 @@
       arm_simulator_memory_simulation_filename="$(ProjectDir)/LPC1000SimulatorMemory.dll"
       arm_simulator_memory_simulation_parameter="LPC17;0x80000;0x8000;0x8000"
       arm_target_debug_interface_type="ADIv5"
-      arm_target_interface_type="JTAG"
+      arm_target_interface_type="SWD"
       arm_target_loader_parameter="12000000"
       arm_target_read_only_software_breakpoints="Disabled"
       arm_target_stop_cpu_using_dbgrq="No"
       c_only_additional_options="-fms-extensions"
-      c_preprocessor_definitions="USE_PROCESS_STACK;__TARGET_PROCESSOR=LPC1769;OSCILLATOR_CLOCK_FREQUENCY=12000000;CORE_M3"
+      c_preprocessor_definitions="USE_PROCESS_STACK;__TARGET_PROCESSOR=LPC1769;OSCILLATOR_CLOCK_FREQUENCY=12000000;CORE_M3;STARTUP_FROM_RESET" c_preprocessor_undefinitions=""
       c_user_include_directories="/home/drob/LPCOpen_17xx/lpc_chip_175x_6x/inc;/home/drob/LPCOpen_17xx/lpc_board_nxp_lpcxpresso_1769/inc;$(ProjectDir)/LPC1000/include/CMSIS;$(ProjectDir)/CMSIS_3/CMSIS/Include;$(ProjectDir)/LPC1000/include"
       compile_pre_build_command="$(ProjectDir)/dateset.sh ."
       link_include_startup_code="No"
@@ -44,7 +44,9 @@
       target_reset_script="SRAMReset()" />
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="SimpleTestGPIO.c" />
+      <file file_name="SimpleTestGPIO.c">
+        <configuration Name="Common" c_preprocessor_undefinitions="" />
+      </file>
       <file file_name="bitband.h" />
       <file file_name="mDT.h" />
       <file file_name="sysinit.c" />

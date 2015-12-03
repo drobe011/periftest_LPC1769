@@ -16,3 +16,6 @@
 ## Aditional Items
 - Bit Banding
 - Redirect printf to UART
+
+### FYI
+**Freq = (clock / prescale / match) - 1

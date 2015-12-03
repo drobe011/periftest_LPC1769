@@ -9,7 +9,12 @@
  */
 
 #include "SimpleTestGPIO.h"
+//#undef DEBUG_ENABLE
 
+#ifdef DEBUG_ENABLE
+#include <cross_studio_io.h>
+#endif
+	
 int main(void)
 {
 	SystemCoreClockUpdate();
@@ -18,86 +23,65 @@ int main(void)
 	SysTick_Config(SystemCoreClock / 1000);
 
 	RTC_TIME_T FullTime;
-	uint32_t tickertime = ticker;
+	I2C_XFER_T xfer;
 	uint8_t rcvchar = EOF;
-	uint32_t duty = 0;
-	uint32_t flashDir = 1;
 
 	setupTimer();
 	setupCounter();
 	setupRTC(&FullTime);
-	setupEEPROM();
+	setupEEPROM(&xfer);
 	setupPWM(KHZ(1), duty);
 	setupRITimer();
 
-	printf("\n\n\rReady..\n\r");
-
+	#ifdef DEBUG_ENABLE
+	debug_printf("\n\n\r..Ready..\n\r");
+	#endif
+	
 	while (1)
 	{
-		if (ticker > (tickertime + 100))
+		#ifdef DEBUG_ENABLE
+		rcvchar = debug_getch();
+		if (rcvchar != EOF)
 		{
-			rcvchar = Board_UARTGetChar();
-			if (rcvchar != EOF)
+			switch (rcvchar)
 			{
-				switch (rcvchar)
-				{
-					case 't':
-						Chip_RTC_GetFullTime(LPC_RTC, &FullTime);
-						showTime(&FullTime);
-						break;
-					case 'c':
-						printf("\n\rCaps: %d\n\r", cap);
-						break;
-					case 'e':
-						getProm();
-						break;						
-				}
+				case 't':
+					showTime(&FullTime);
+					break;
+				case 'c':
+					debug_printf("\n\rCaps: %d\n\r", cap);
+					break;
+				case 'e':
+					getProm(&xfer);
+					break;
 			}
-			tickertime = ticker;
-		}	
-		if (updatePWMTimer)
-		{
-			switch (flashDir)
-			{
-				case 0:
-				if (duty > 0) duty--;
-				if (duty == 0) flashDir = 1;
-				break;
-				case 1:
-				if (duty < 100) duty++;
-				if (duty == 100) flashDir = 0;
-			}
-			Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
-			Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
-			Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
-			updatePWMTimer = 0;			
 		}
+		#endif
 	}
-	//return 0;
 }
 
 void setupTimer(void)
 {
 	Chip_IOCON_PinMux(LPC_IOCON, 1, 28, 2, 3);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 28);
-	
+
 	Chip_TIMER_Init(LPC_TIMER0);
 	Chip_TIMER_Reset(LPC_TIMER0);
 	Chip_TIMER_PrescaleSet(LPC_TIMER0, 500);
 	Chip_TIMER_SetMatch(LPC_TIMER0, 0, 16000);
 	Chip_TIMER_ResetOnMatchEnable(LPC_TIMER0, 0);
-//	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
+	//	Chip_TIMER_MatchEnableInt(LPC_TIMER0, 0);
 	Chip_TIMER_ExtMatchControlSet(LPC_TIMER0, RESET, TIMER_EXTMATCH_TOGGLE, 0);
 	Chip_TIMER_Enable(LPC_TIMER0);
-//	NVIC_ClearPendingIRQ(TIMER0_IRQn);
-//	NVIC_EnableIRQ(TIMER0_IRQn);
+	//	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	//	NVIC_EnableIRQ(TIMER0_IRQn);
 }
 
 void setupCounter(void)
 {
 	Chip_IOCON_PinMux(LPC_IOCON, 1, 18, 2, 3);
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO, 1, 18);
-	
+
 	Chip_TIMER_Init(LPC_TIMER1);
 	Chip_TIMER_Reset(LPC_TIMER1);
 	Chip_TIMER_CaptureRisingEdgeEnable(LPC_TIMER1, 0);
@@ -111,12 +95,12 @@ void setupPWM(uint32_t period, uint32_t onTime)
 {
 	Chip_IOCON_PinMux(LPC_IOCON, 1, 20, 2, 2); //pwm1.2
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO, 1, 20);
-	
+
 	Chip_PWM_Init(LPC_PWM1);
 	Chip_PWM_Reset(LPC_PWM1);
-	Chip_PWM_PrescaleSet(LPC_PWM1, 300);
+	Chip_PWM_PrescaleSet(LPC_PWM1, 299); // PCLK (Systemcoreclock/4) / 299 = 100kHz
 	Chip_PWM_ResetOnMatchEnable(LPC_PWM1, 0);
-	Chip_PWM_SetMatch(LPC_PWM1, 0, period);
+	Chip_PWM_SetMatch(LPC_PWM1, 0, period); // PR / period (100) = 1kHz
 	Chip_PWM_SetMatch(LPC_PWM1, 2, onTime);
 	Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
 	Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
@@ -143,14 +127,12 @@ void setupRTC(RTC_TIME_T *thisTime)
 	}
 }
 
-void setupEEPROM(void)
+void setupEEPROM(I2C_XFER_T *xfr)
 {
-	xfer.rxBuff = rxbuffer;
-	xfer.rxSz = 4;
-	xfer.txBuff = txbuffer;
-	xfer.txSz = 6;
-	xfer.slaveAddr = 0b1010000;
-	xfer.slaveAddr &= 0xFF;
+	xfr->rxSz = 4;
+	xfr->txSz = 6;
+	xfr->slaveAddr = 0b1010000;
+	xfr->slaveAddr &= 0xFF;
 
 	Chip_I2C_Init(I2C1);
 	Chip_I2C_SetClockRate(I2C1, 100000);
@@ -175,7 +157,19 @@ void SysTick_Handler(void)
 
 void RIT_IRQHandler(void)
 {
-	updatePWMTimer = 1;
+	switch (flashDir)
+	{
+		case 0:
+			if (duty > 1) duty--;
+			if (duty == 1) flashDir = 1;
+			break;
+		case 1:
+			if (duty < 100) duty++;
+			if (duty == 100) flashDir = 0;
+	}
+	Chip_PWM_SetMatch(LPC_PWM1, 2, duty);
+	Chip_PWM_LatchEnable(LPC_PWM1, 0, 1);
+	Chip_PWM_LatchEnable(LPC_PWM1, 2, 1);
 	Chip_RIT_ClearInt(LPC_RITIMER);
 }
 
@@ -189,12 +183,9 @@ void RIT_IRQHandler(void)
 
 void TIMER1_IRQHandler(void)
 {
-	//uint32_t bitVal = 0;
 	if (Chip_TIMER_CapturePending(LPC_TIMER1, 0))
 	{
 		Chip_TIMER_ClearCapture(LPC_TIMER1, 0);
-		///////LPC_TIMER0->EMR &= ~(1 << 0);
-		//Board_LED_Toggle(0);
 		BITBAND_SRAM_GetBit(FIO0GET_ADDRESS, LED_PIN) ? BITBAND_SRAM_SetBit(FIO0CLR_ADDRESS, LED_PIN) : BITBAND_SRAM_SetBit(FIO0SET_ADDRESS, LED_PIN);
 		cap++;
 	}
@@ -204,33 +195,42 @@ void showTime(RTC_TIME_T *pTime)
 {
 	NVIC_ClearPendingIRQ(RITIMER_IRQn);
 	NVIC_DisableIRQ(RITIMER_IRQn);
-	printf("Time: %.2d:%.2d:%.2d %.2d/%.2d/%.4d\r\n",
+	Chip_RTC_GetFullTime(LPC_RTC, pTime);
+	#ifdef DEBUG_ENABLE
+	debug_printf("\r\nTime: %.2d:%.2d:%.2d",
 		   pTime->time[RTC_TIMETYPE_HOUR], pTime->time[RTC_TIMETYPE_MINUTE],
-		   pTime->time[RTC_TIMETYPE_SECOND], pTime->time[RTC_TIMETYPE_MONTH],
+		   pTime->time[RTC_TIMETYPE_SECOND]);
+	debug_printf(" %.2d/%.2d/%.4d\r\n", pTime->time[RTC_TIMETYPE_MONTH],
 		   pTime->time[RTC_TIMETYPE_DAYOFMONTH],
 		   pTime->time[RTC_TIMETYPE_YEAR]);
+	#endif
 	NVIC_ClearPendingIRQ(RITIMER_IRQn);
 	NVIC_EnableIRQ(RITIMER_IRQn);
 }
 
-void getProm(void)
+void getProm(I2C_XFER_T *xfr)
 {
-	xfer.rxSz = 4;
-	xfer.txSz = 2;
-	txbuffer[0] = 0;
-	txbuffer[1] = 0;
+	const uint8_t R_SIZE = 4;
+	uint8_t rxbuffer[5];
+	uint8_t txbuffer[] = {0, 0};
+	xfr->rxSz = R_SIZE;
+	xfr->txSz = 2;
+	xfr->rxBuff = rxbuffer;
+	xfr->txBuff = txbuffer;
+	
+	#ifdef DEBUG_ENABLE
+	debug_printf("\n\r%d:", Chip_I2C_MasterTransfer(I2C1, xfr));
+	rxbuffer[R_SIZE] = '\0';
 
-	memset(rxbuffer, 0, sizeof rxbuffer);
-	xfer.rxBuff = rxbuffer;
-
-	Chip_I2C_MasterTransfer(I2C1, &xfer);
-
-	printf("\n\rEEPROM: %s\n\r", rxbuffer);
+	debug_printf(" EEPROM: %s\n\r", rxbuffer);
+	#endif
 }
 
-int __putchar(int ch)
-{
-	Board_UARTPutChar(ch);
-	return (1);
-	//debug_putchar(ch);
-}
+//int __putchar(int ch)
+//{
+//	while ((LPC_UART3->LSR & UART_LSR_THRE) == 0) {}
+//	LPC_UART3->THR = ch;
+//	//Board_UARTPutChar(ch);
+//	return (1);
+//	//debug_putchar(ch);
+//}
