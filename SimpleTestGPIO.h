@@ -24,6 +24,11 @@ volatile int updatePWMTimer = 0;
 volatile int duty = 1;
 volatile int flashDir = 1;
 
+enum {FIRST_NAME, LAST_NAME};
+enum {LOC, B_LENGTH};
+
+uint8_t EEPROM_Data[2][2] = {{0,4},{5,9}};
+		
 void setupTimer(void);
 void setupCounter(void);
 void setupPWM(uint32_t period, uint32_t onTime);
@@ -31,6 +36,6 @@ void setupRTC(RTC_TIME_T *thisTime);
 void setupEEPROM(I2C_XFER_T *xfr);
 void setupRITimer(void);
 void showTime(RTC_TIME_T *pTime);
-void getProm(I2C_XFER_T *xfr);
+void getProm(I2C_XFER_T *xfr, uint8_t whatname);
 
 #endif

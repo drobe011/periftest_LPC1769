@@ -51,8 +51,11 @@ int main(void)
 				case 'c':
 					debug_printf("\n\rCaps: %d\n\r", cap);
 					break;
-				case 'e':
-					getProm(&xfer);
+				case 'f':
+					getProm(&xfer, FIRST_NAME);
+					break;
+				case 'l':
+					getProm(&xfer, LAST_NAME);
 					break;
 			}
 		}
@@ -129,16 +132,19 @@ void setupRTC(RTC_TIME_T *thisTime)
 
 void setupEEPROM(I2C_XFER_T *xfr)
 {
-	xfr->rxSz = 4;
-	xfr->txSz = 6;
+	//xfr->rxSz = 4;
+	//xfr->txSz = ;
 	xfr->slaveAddr = 0b1010000;
 	xfr->slaveAddr &= 0xFF;
+	//uint8_t cmd[] = "xxRobertson";
+	//cmd[0] = 0;
+	//cmd[1] = 5;
 
 	Chip_I2C_Init(I2C1);
 	Chip_I2C_SetClockRate(I2C1, 100000);
 	Chip_I2C_SetMasterEventHandler(I2C1, Chip_I2C_EventHandlerPolling);
 
-	//Chip_I2C_MasterSend(I2C1, xfer.slaveAddr, "dave", 4);
+	//Chip_I2C_MasterSend(I2C1, xfr->slaveAddr, cmd, 11);
 }
 
 void setupRITimer(void)
@@ -208,11 +214,11 @@ void showTime(RTC_TIME_T *pTime)
 	NVIC_EnableIRQ(RITIMER_IRQn);
 }
 
-void getProm(I2C_XFER_T *xfr)
+void getProm(I2C_XFER_T *xfr, uint8_t whatname)
 {
-	const uint8_t R_SIZE = 4;
-	uint8_t rxbuffer[5];
-	uint8_t txbuffer[] = {0, 0};
+	uint8_t R_SIZE = EEPROM_Data[whatname][B_LENGTH];
+	uint8_t rxbuffer[R_SIZE + 1];
+	uint8_t txbuffer[] = {0, EEPROM_Data[whatname][LOC]};
 	xfr->rxSz = R_SIZE;
 	xfr->txSz = 2;
 	xfr->rxBuff = rxbuffer;
