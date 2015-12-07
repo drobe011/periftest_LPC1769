@@ -52,6 +52,18 @@
       <file file_name="mDT.h" />
       <file file_name="sysinit.c" />
       <file file_name="SimpleTestGPIO.h" />
+      <file file_name="timer.c" />
+      <file file_name="timer.h" />
+      <file file_name="counter.c" />
+      <file file_name="counter.h" />
+      <file file_name="rtc.c" />
+      <file file_name="rtc.h" />
+      <file file_name="eeprom_i2c.c" />
+      <file file_name="eeprom_i2c.h" />
+      <file file_name="pwm.c" />
+      <file file_name="pwm.h" />
+      <file file_name="rit.c" />
+      <file file_name="rit.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="thumb_crt0.s" />
