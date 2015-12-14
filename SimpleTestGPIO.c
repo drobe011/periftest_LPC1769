@@ -11,10 +11,10 @@
 #include "SimpleTestGPIO.h"
 //#undef DEBUG_ENABLE
 
-#ifdef DEBUG_ENABLE
-#include <cross_studio_io.h>
-#endif
-	
+//#ifdef DEBUG_ENABLE
+//#include <cross_studio_io.h>
+//#endif
+
 int main(void)
 {
 	SystemCoreClockUpdate();
@@ -26,28 +26,25 @@ int main(void)
 	I2C_XFER_T xfer;
 	uint8_t rcvchar = EOF;
 	uint32_t tickerStore = ticker;
-	extern volatile int duty;
-	extern volatile int cap;
 
-	setupTimer();
-	setupCounter();
+//	setupTimer();
+//	setupCounter();
 	setupRTC(&FullTime);
 	setupEEPROM(&xfer);
-	setupPWM(KHZ(1), duty);
-	setupRITimer();
+//	setupPWM(KHZ(1), duty);
+//	setupRITimer();
+	setupKeypad();
 
-	#ifdef DEBUG_ENABLE
-	debug_printf("\n\n\r..Ready..\n\r");
-	#endif
-	
+#ifdef DEBUG_ENABLE
+	printf("\n\n\r..Ready..\n\r");
+#endif
+
 	while (1)
 	{
 		if (ticker > (tickerStore + LOOP_DELAY_MS))
 		{
-			#ifdef DEBUG_ENABLE
-			if (debug_kbhit())
-			{
-				rcvchar = debug_getch();
+#ifdef DEBUG_ENABLE
+				rcvchar = Board_UARTGetChar(); //debug_getch();
 				if (rcvchar != EOF)
 				{
 					switch (rcvchar)
@@ -55,21 +52,64 @@ int main(void)
 						case 't':
 							showTime(&FullTime);
 							break;
-						case 'c':
-							debug_printf("\n\rCaps: %d\n\r", cap);
-							break;
 						case 'f':
 							getProm(&xfer, FIRST_NAME);
 							break;
 						case 'l':
 							getProm(&xfer, LAST_NAME);
 							break;
+						case 'k':
+							getKeypad(10, '=', &callBackFx);
+							break;
 					}
 				}
-				#endif
-			}
+#endif
 		}
 	}
+}
+
+uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void))
+{
+	extern volatile uint8_t isNew;
+	
+	if (sz > BUFFERSIZE) return 0;
+	memset(keybuffer, '\0', BUFFERSIZE);
+	
+	#ifdef DEBUG_ENABLE
+	printf("\n\rInput\n\r");
+	#endif
+	
+	uint8_t keyP[] = {0,0};
+	uint8_t keyP_State[] = {0,0};
+	uint8_t keyLoopCnt = 0;
+	uint8_t kpVal = 0;
+	
+	for (keyLoopCnt = 0; keyLoopCnt < sz; keyLoopCnt++)
+	{
+		kpVal = getKPChar(keyP, pf);
+		if (keypad[keyP[0]][keyP[1]] == ESC_char) break;
+		keybuffer[keyLoopCnt] = keypad[keyP[0]][keyP[1]];
+	}
+	keybuffer[keyLoopCnt + 1] = '\0';
+	if (strcmp(keybuffer, "6648"))
+	{
+		#ifdef DEBUG_ENABLE
+		printf("\n\rNot Vallid %s\n\r", keybuffer);
+		#endif
+	}
+	else
+	{
+		#ifdef DEBUG_ENABLE
+		printf("\n\rCorrect %s\n\r", keybuffer);
+		#endif
+	}
+	return 1;
+}
+
+uint32_t callBackFx(void)
+{
+	//Board_LED_Toggle(0);
+	return 1;
 }
 
 void SysTick_Handler(void)
@@ -77,21 +117,8 @@ void SysTick_Handler(void)
 	ticker++;
 }
 
-
-
-
-
-
-
-
-
-
-
-//int __putchar(int ch)
-//{
-//	while ((LPC_UART3->LSR & UART_LSR_THRE) == 0) {}
-//	LPC_UART3->THR = ch;
-//	//Board_UARTPutChar(ch);
-//	return (1);
-//	//debug_putchar(ch);
-//}
+int __putchar(int ch)
+{
+	while ((LPC_UART3->LSR & UART_LSR_THRE) == 0) {}
+	LPC_UART3->THR = ch;
+}

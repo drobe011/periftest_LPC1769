@@ -1,13 +1,11 @@
 #include "board.h"
 #include "rit.h"
 
-volatile int flashDir = 1;
-volatile int duty = 1;
-
 void setupRITimer(void)
 {
 	Chip_RIT_Init(LPC_RITIMER);
-	Chip_RIT_SetTimerInterval(LPC_RITIMER, 10);
+	Chip_RIT_SetTimerInterval(LPC_RITIMER, 20);
+	Chip_RIT_TimerDebugEnable(LPC_RITIMER);
 	Chip_RIT_Enable(LPC_RITIMER);
 	NVIC_ClearPendingIRQ(RITIMER_IRQn);
 	NVIC_EnableIRQ(RITIMER_IRQn);

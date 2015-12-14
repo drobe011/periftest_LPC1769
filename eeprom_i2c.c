@@ -31,9 +31,9 @@ void getProm(I2C_XFER_T *xfr, uint8_t whatname)
 	xfr->txBuff = txbuffer;
 	
 	#ifdef DEBUG_ENABLE
-	debug_printf("\n\r%d:", Chip_I2C_MasterTransfer(I2C1, xfr));
+	printf("\n\r%d:", Chip_I2C_MasterTransfer(I2C1, xfr));
 	rxbuffer[R_SIZE] = '\0';
 
-	debug_printf(" EEPROM: %s\n\r", rxbuffer);
+	printf(" EEPROM: %s\n\r", rxbuffer);
 	#endif
 }

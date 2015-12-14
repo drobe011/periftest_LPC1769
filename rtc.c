@@ -1,9 +1,6 @@
 #include "board.h"
 #include "rtc.h"
 #include "mDT.h"
-#ifdef DEBUG_ENABLE
-#include <cross_studio_io.h>
-#endif
 
 void setupRTC(RTC_TIME_T *thisTime)
 {
@@ -30,10 +27,10 @@ void showTime(RTC_TIME_T *pTime)
 	NVIC_DisableIRQ(RITIMER_IRQn);
 	Chip_RTC_GetFullTime(LPC_RTC, pTime);
 	#ifdef DEBUG_ENABLE
-	debug_printf("\r\nTime: %.2d:%.2d:%.2d",
+	printf("\r\nTime: %.2d:%.2d:%.2d",
 		   pTime->time[RTC_TIMETYPE_HOUR], pTime->time[RTC_TIMETYPE_MINUTE],
 		   pTime->time[RTC_TIMETYPE_SECOND]);
-	debug_printf(" %.2d/%.2d/%.4d\r\n", pTime->time[RTC_TIMETYPE_MONTH],
+	printf(" %.2d/%.2d/%.4d\r\n", pTime->time[RTC_TIMETYPE_MONTH],
 		   pTime->time[RTC_TIMETYPE_DAYOFMONTH],
 		   pTime->time[RTC_TIMETYPE_YEAR]);
 	#endif
