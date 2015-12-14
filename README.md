@@ -16,6 +16,7 @@
 ## Aditional Items
 - Bit Banding
 - Redirect printf to UART
+- 5x5 Keypad matrix (383G solar calculator)
 
 ### FYI
-**Freq = (clock / prescale / match) - 1
+**Freq** = (clock / prescale / match) - 1

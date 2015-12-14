@@ -8,9 +8,9 @@
       arm_core_type="Cortex-M3"
       arm_gcc_target="arm-unknown-eabi"
       arm_interwork="No"
-      arm_linker_heap_size="256"
-      arm_linker_process_stack_size="256"
-      arm_linker_stack_size="256"
+      arm_linker_heap_size="512"
+      arm_linker_process_stack_size="512"
+      arm_linker_stack_size="512"
       arm_simulator_memory_simulation_filename="$(ProjectDir)/LPC1000SimulatorMemory.dll"
       arm_simulator_memory_simulation_parameter="LPC17;0x80000;0x8000;0x8000"
       arm_target_debug_interface_type="ADIv5"
@@ -52,6 +52,20 @@
       <file file_name="mDT.h" />
       <file file_name="sysinit.c" />
       <file file_name="SimpleTestGPIO.h" />
+      <file file_name="timer.c" />
+      <file file_name="timer.h" />
+      <file file_name="counter.c" />
+      <file file_name="counter.h" />
+      <file file_name="rtc.c" />
+      <file file_name="rtc.h" />
+      <file file_name="eeprom_i2c.c" />
+      <file file_name="eeprom_i2c.h" />
+      <file file_name="pwm.c" />
+      <file file_name="pwm.h" />
+      <file file_name="rit.c" />
+      <file file_name="rit.h" />
+      <file file_name="keypad.c" />
+      <file file_name="keypad.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="thumb_crt0.s" />
