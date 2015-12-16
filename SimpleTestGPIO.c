@@ -44,7 +44,7 @@ int main(void)
 		if (ticker > (tickerStore + LOOP_DELAY_MS))
 		{
 #ifdef DEBUG_ENABLE
-				rcvchar = Board_UARTGetChar(); //debug_getch();
+				rcvchar = Board_UARTGetChar();
 				if (rcvchar != EOF)
 				{
 					switch (rcvchar)
@@ -59,7 +59,7 @@ int main(void)
 							getProm(&xfer, LAST_NAME);
 							break;
 						case 'k':
-							getKeypad(10, '=', &callBackFx);
+							getKeypad(10, '=', callBackFx, dispKPChar);
 							break;
 					}
 				}
@@ -68,7 +68,7 @@ int main(void)
 	}
 }
 
-uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void))
+uint32_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void), uint32_t (*display)(uint8_t, uint8_t))
 {
 	extern volatile uint8_t isNew;
 	
@@ -86,7 +86,7 @@ uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void))
 	
 	for (keyLoopCnt = 0; keyLoopCnt < sz; keyLoopCnt++)
 	{
-		kpVal = getKPChar(keyP, pf);
+		kpVal = getKPChar(keyP, pf, display);
 		if (!kpVal) break;
 		if (keypad[keyP[0]][keyP[1]] == ESC_char) break;
 		keybuffer[keyLoopCnt] = keypad[keyP[0]][keyP[1]];
@@ -120,6 +120,13 @@ uint32_t callBackFx(void)
 	else return 1;
 }
 
+uint32_t dispKPChar(uint8_t row, uint8_t col)
+{
+	#ifdef DEBUG_ENABLE
+	printf("%c", keypad[row][col]);
+	#endif
+	return 1;
+}
 void SysTick_Handler(void)
 {
 	ticker++;

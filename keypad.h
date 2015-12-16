@@ -47,11 +47,12 @@ void setupKeypad(void);
  * Gets single key press from keypad.
  *
  * \param[in] pf Function Pointer to callback routine.
+ * \param[in] display Function pointer to display keypress
  * \param[out] kpchar Stores keypress x,y value.
  * \return 0 if error/escape
  * 1 if successful
  */
-uint16_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void));
+uint32_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void), uint32_t (*display)(uint8_t, uint8_t));
 
 #endif
 /** @} */

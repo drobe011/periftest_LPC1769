@@ -46,10 +46,12 @@ uint8_t keybuffer[BUFFERSIZE];
  * \param[in] sz Max receive size.
  * \param[in] ESC_char Escape/Termination character.
  * \param[in] pf Function pointer to callback routine.
+ * \param[in] display Function pointer to display keypress
  * \return 0 if error/escape
  * 1 if successful
  */
-uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void));
+
+uint32_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void), uint32_t (*display)(uint8_t, uint8_t));
 /*!
  * \brief Callback function call from \a keypad routine.
  *
@@ -61,4 +63,13 @@ uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void));
  */
 uint32_t callBackFx(void);
 
+/*!
+ * \brief Display function call from \a keypad routine.
+ *
+ * \param[in] row KP matrix row value (K#)
+ * \param[in] col KP matrix column value (A#X, P2)
+ * \return 0 if error/escape
+ * 1 if successful
+ */
+uint32_t dispKPChar(uint8_t row, uint8_t col);
 #endif

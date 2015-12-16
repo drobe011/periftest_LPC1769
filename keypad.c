@@ -30,7 +30,7 @@ void setupKeypad(void)
 	}
 }
 
-uint16_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void))
+uint32_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void), uint32_t (*display)(uint8_t, uint8_t))
 {
 	const uint32_t GPIO_Port2Mask = 0b100111111111;
 	const uint32_t GPIO_RowPinMask = 0b11111;
@@ -92,6 +92,7 @@ uint16_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void))
 							*kpchar = KP_rowPin;
 							kpchar++;
 							*kpchar = KP_columnValue;
+							display(KP_rowPin, KP_columnValue);
 							state = WAIT_FOR_RELEASE;
 						}
 					} //if maskedport
