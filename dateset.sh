@@ -18,3 +18,4 @@ date +'%-w' >> $1/mDT.h
 echo -n '#define mDOY ' >> $1/mDT.h
 date +'%-j' >> $1/mDT.h
 echo '#endif' >> $1/mDT.h
+

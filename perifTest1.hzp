@@ -14,7 +14,7 @@
       arm_simulator_memory_simulation_filename="$(ProjectDir)/LPC1000SimulatorMemory.dll"
       arm_simulator_memory_simulation_parameter="LPC17;0x80000;0x8000;0x8000"
       arm_target_debug_interface_type="ADIv5"
-      arm_target_interface_type="SWD"
+      arm_target_interface_type="JTAG"
       arm_target_loader_parameter="12000000"
       arm_target_read_only_software_breakpoints="Disabled"
       arm_target_stop_cpu_using_dbgrq="No"
@@ -22,10 +22,12 @@
       c_preprocessor_definitions="USE_PROCESS_STACK;__TARGET_PROCESSOR=LPC1769;OSCILLATOR_CLOCK_FREQUENCY=12000000;CORE_M3;STARTUP_FROM_RESET"
       c_preprocessor_undefinitions=""
       c_user_include_directories="/home/drob/LPCOpen_17xx/lpc_chip_175x_6x/inc;/home/drob/LPCOpen_17xx/lpc_board_nxp_lpcxpresso_1769/inc;$(ProjectDir)/LPC1000/include/CMSIS;$(ProjectDir)/CMSIS_3/CMSIS/Include;$(ProjectDir)/LPC1000/include"
+      compile_post_build_command=""
       compile_pre_build_command="$(ProjectDir)/dateset.sh ."
       link_include_startup_code="No"
       linker_additional_files="$(TargetsDir)/LPC1000/lib/liblpc1000$(LibExt)$(LIB)"
       linker_memory_map_file="$(ProjectDir)/LPC1769_MemoryMap.xml"
+      linker_post_build_command="doxygen $(ProjectDir)/Doxyfile"
       macros="LPC1000_Series=LPC17xx;Target=LPC1769;Placement=Flash;oscillator_frequency=12MHz;CMSIS_4_DSP=No;libctl=No"
       oscillator_frequency="12MHz"
       project_directory=""
@@ -52,17 +54,33 @@
       <file file_name="mDT.h" />
       <file file_name="sysinit.c" />
       <file file_name="SimpleTestGPIO.h" />
-      <file file_name="timer.c" />
+      <file file_name="timer.c">
+        <configuration
+          Name="THUMB Flash Debug"
+          build_exclude_from_build="Yes" />
+      </file>
       <file file_name="timer.h" />
-      <file file_name="counter.c" />
+      <file file_name="counter.c">
+        <configuration
+          Name="THUMB Flash Debug"
+          build_exclude_from_build="Yes" />
+      </file>
       <file file_name="counter.h" />
       <file file_name="rtc.c" />
       <file file_name="rtc.h" />
       <file file_name="eeprom_i2c.c" />
       <file file_name="eeprom_i2c.h" />
-      <file file_name="pwm.c" />
+      <file file_name="pwm.c">
+        <configuration
+          Name="THUMB Flash Debug"
+          build_exclude_from_build="Yes" />
+      </file>
       <file file_name="pwm.h" />
-      <file file_name="rit.c" />
+      <file file_name="rit.c">
+        <configuration
+          Name="THUMB Flash Debug"
+          build_exclude_from_build="Yes" />
+      </file>
       <file file_name="rit.h" />
       <file file_name="keypad.c" />
       <file file_name="keypad.h" />

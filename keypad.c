@@ -1,7 +1,18 @@
+/*!
+ * \file keypad.c
+ *
+ * \author David Robertson
+ * \date 14 December, 2015
+ *
+ * [your comment here]
+ */
+
 #include "board.h"
 #include "keypad.h"
 
+/** Global variable to hold Systick counter.*/
 extern volatile int ticker;
+/** Global array to hold \a KP_rowPin physical pins.*/
 static const uint32_t A_PINS[] = {11, 8, 7, 6, 5};
 
 void setupKeypad(void)
@@ -22,11 +33,13 @@ void setupKeypad(void)
 uint16_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void))
 {
 	const uint32_t GPIO_Port2Mask = 0b100111111111;
+	const uint32_t GPIO_RowPinMask = 0b11111;
 	uint32_t maskedPort = 0;
 	uint32_t KP_columnValue = 0;
 	uint32_t tickerState = ticker;
-	uint8_t KP_rowPin = 4;
-	uint8_t scan = 1;
+	uint8_t KP_rowPin = 0;
+	uint8_t scan = ENABLE;
+	uint32_t callbackReturnValue = 0;
 	enum
 	{
 		CHANGE_HIGH_PIN,
@@ -85,21 +98,23 @@ uint16_t getKPChar(uint8_t *kpchar, uint32_t (*pf)(void))
 					else state = CALLBACK;
 					break;
 					case CALLBACK:
-					if (pf) pf();
-					state = CHANGE_HIGH_PIN;
-					break;
+						callbackReturnValue = 1;
+						if (pf) callbackReturnValue = pf();
+						state = (callbackReturnValue) ? CHANGE_HIGH_PIN : RELEASED;
+						break;
 					case WAIT_FOR_RELEASE:
 						maskedPort = Chip_GPIO_GetPortValue(LPC_GPIO, KP_GPIO_PORT) & GPIO_Port2Mask;
 						GET_ROW_VALUES(maskedPort);
 						if (!maskedPort) state = RELEASED;
 						break;
 					case RELEASED:
-						Chip_GPIO_SetPinOutLow(LPC_GPIO, KP_GPIO_PORT, KP_rowPin);
-						scan = 0;
+						Chip_GPIO_SetPortOutLow(LPC_GPIO, KP_GPIO_PORT, GPIO_RowPinMask);
+						scan = DISABLE;
 						break;
 			} //switch state
 			tickerState = ticker;
 		} //switch ticker
 	} //while scan
+	if (!callbackReturnValue) return 0;
 	return 1;
 }

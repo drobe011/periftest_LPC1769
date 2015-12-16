@@ -87,6 +87,7 @@ uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void))
 	for (keyLoopCnt = 0; keyLoopCnt < sz; keyLoopCnt++)
 	{
 		kpVal = getKPChar(keyP, pf);
+		if (!kpVal) break;
 		if (keypad[keyP[0]][keyP[1]] == ESC_char) break;
 		keybuffer[keyLoopCnt] = keypad[keyP[0]][keyP[1]];
 	}
@@ -109,7 +110,14 @@ uint8_t getKeypad(uint8_t sz, uint8_t ESC_char, uint32_t (*pf)(void))
 uint32_t callBackFx(void)
 {
 	//Board_LED_Toggle(0);
-	return 1;
+	if (Board_UARTGetChar() == 'x')
+	{
+		#ifdef DEBUG_ENABLE
+		printf("\n\rAbort%s\n\r");
+		#endif
+		return 0;
+	}
+	else return 1;
 }
 
 void SysTick_Handler(void)
